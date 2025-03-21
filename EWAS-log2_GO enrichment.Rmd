@@ -1,0 +1,169 @@
+---
+title: "GO_Enrichment Analysis - tp3, tp12 - adjusted for race/eth, sex, cell type"
+author: "Jasmine Douglas"
+date: "2023-05-16"
+output: html_document
+---
+
+```{r}
+#load all libraries
+library(dplyr)
+library(data.table)
+library(missMethyl)
+library(magrittr)
+library(tidyverse)
+
+
+#load all files needed - sex, race, and cell type adjusted, tp3/tp12, logFC > .05 & Bonferroni significant sites
+
+tp3_hiv.heu_sex.race.ct<-read.csv("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_heu-sex-race-ct5_logFC_Final.rerun.csv")
+tp12_hiv.heu_sex.race.ct<-read.csv("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp12_hiv_heu-sex-race-ct3_logFC_Final.rerun.csv")
+tp3_hiv.huu_sex.race.ct<-read.csv("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_huu-sex-race-ct5_logFC_Final.rerun.csv")
+tp12_hiv.huu_sex.race.ct<-read.csv("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp12_hiv_huu-sex-race-ct3_logFC_Final.rerun.csv")
+
+
+```
+
+Create a list of all 843,393 CpG sites tested following pre-processing and probe removal. 
+
+```{r}
+load("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\processed_one_outlier_dropped_rerun08Apr23.rda")
+dim(beta)
+```
+
+Filter a matrix of betas values by distance to single nucleotide polymorphisms (SNPs) and by SNPs with minor allele frequency (MAF) of 5% (rare variant). Also removes crosshybridising and sex chromosome probes; named beta.clean. After removing the sex chromosome probes, there were 843,393 CpG sites left.
+
+```{r}
+betas.clean = beta[manifest[probe_type == "cg" & !chr %in% c("X","Y")]$index,]
+dim(betas.clean)
+rm(beta)
+nCpG = dim(betas.clean)[1]
+nCpG
+```
+
+```{r}
+nCpGs.labels = row.names(betas.clean)
+nCpGs.labels[1:10]
+```
+
+
+# GO Enrichment - Gene set testing - Adjusted for sex, race, cell type.
+
+  
+Prepare lists of significant and total CpG sites for each analysis for input into GOmeth.  
+
+The test will be completed against the EPIC array background excluding sites removed from previous step (i.e. sites from betas.clean)
+
+```{r}
+# lists of all significant, restricted sites
+sigcpgs_tp3.hiv.heu_adj<- tp3_hiv.heu_sex.race.ct$CPG.Label %>% as.vector()
+sigcpgs_tp3.hiv.huu_adj<- tp3_hiv.huu_sex.race.ct$CPG.Label %>% as.vector()
+sigcpgs_tp12.hiv.heu_adj<- tp12_hiv.heu_sex.race.ct$CPG.Label %>% as.vector()
+sigcpgs_tp12.hiv.huu_adj<- tp12_hiv.huu_sex.race.ct$CPG.Label %>% as.vector()
+
+```
+
+
+MissMethyl pipeline for DM Gene Set Testing.
+
+###tp3_hiv.heu_adj
+
+
+```{r}
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+GO_enrich_tp3_hiv.heu_adj <- gometh(sig.cpg=sigcpgs_tp3.hiv.heu_adj, 
+                                    all.cpg=nCpGs.labels, 
+                                    collection="GO", 
+                                    array.type="EPIC",
+                                    plot.bias=TRUE, sig.genes = TRUE)
+names(GO_enrich_tp3_hiv.heu_adj)
+topGSA(GO_enrich_tp3_hiv.heu_adj)
+
+```
+
+
+###tp3_hiv.huu_adj
+
+GO pathway enrichment.
+```{r}
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+GO_enrich_tp3_hiv.huu_adj <- gometh(sig.cpg=sigcpgs_tp3.hiv.huu_adj, 
+                                    all.cpg=nCpGs.labels, 
+                                    collection="GO", 
+                                    array.type="EPIC",
+                                    plot.bias=TRUE, sig.genes = TRUE)
+names(GO_enrich_tp3_hiv.huu_adj)
+topGSA(GO_enrich_tp3_hiv.huu_adj)
+
+```
+
+
+###tp12_hiv.heu_adj
+
+
+GO pathway enrichment.
+```{r}
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+GO_enrich_tp12_hiv.heu_adj <- gometh(sig.cpg=sigcpgs_tp12.hiv.heu_adj, 
+                                     all.cpg=nCpGs.labels, 
+                                     collection="GO", 
+                                     array.type="EPIC",
+                                     plot.bias=TRUE, sig.genes = TRUE)
+names(GO_enrich_tp12_hiv.heu_adj)
+topGSA(GO_enrich_tp12_hiv.heu_adj)
+GO_enrich_tp12_hiv.heu_adj$X<-rownames(GO_enrich_tp12_hiv.heu_adj)
+rownames(GO_enrich_tp12_hiv.heu_adj)<-row_number(GO_enrich_tp12_hiv.heu_adj$FDR)
+
+```
+
+
+
+###tp12_hiv.huu_adj
+
+
+GO pathway enrichment.
+```{r}
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+GO_enrich_tp12_hiv.huu_adj <- gometh(sig.cpg=sigcpgs_tp12.hiv.huu_adj, 
+                                     all.cpg=nCpGs.labels, 
+                                     collection="GO", 
+                                     array.type="EPIC",
+                                     plot.bias=TRUE, sig.genes = TRUE)
+names(GO_enrich_tp12_hiv.huu_adj)
+topGSA(GO_enrich_tp12_hiv.huu_adj)
+
+```
+
+
+# Save results.
+
+```{r}
+# GO pathway results.
+write.csv(GO_enrich_tp3_hiv.heu_adj, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\GO_enrich_tp3_hiv.heu_adj_sex.race.ct5.csv")
+write.csv(GO_enrich_tp3_hiv.huu_adj, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\GO_enrich_tp3_hiv.huu_adj_sex.race.ct5.csv")
+write.csv(GO_enrich_tp12_hiv.heu_adj, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\GO_enrich_tp12_hiv.heu_adj_sex.race.ct3.csv")
+write.csv(GO_enrich_tp12_hiv.huu_adj, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\GO_enrich_tp12_hiv.huu_adj_sex.race.ct3.csv")
+
+```
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,885 @@
+---
+title: "EWAS-log2_Timepoint 3 Adjusted"
+author: "Jasmine Douglas"
+date: "2023-11-16"
+output: html_document
+---
+
+
+#Load required libraries and the rda file produced in pre-processing (log1) that includes beta, pheno, and manifest information.
+
+```{r}
+suppressPackageStartupMessages({
+  library(DMRcate) # for regional analysis
+  library(magrittr)
+  library(CpGassoc)#for running association analysis between methylation levels values and phenotype 
+  library(data.table) # for fast aggregation of large data 
+  library(qqman) # for visualization of data
+  library(stringi) # string manipulation
+  library(dplyr)
+  library(ggplot2)
+  library(minfi)
+  library(limma)
+})
+```
+
+```{r}
+load("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\processed_one_outlier_dropped_rerun08Apr23.rda")
+dim(beta)
+```
+
+Filter a matrix of betas values by distance to single nucleotide polymorphisms (SNPs) and by SNPs with minor allele frequency (MAF) of 5% (rare variant). Also removes crosshybridising and sex chromosome probes; named beta.clean. After removing the sex chromosome probes, there were 843,393 CpG sites left.
+
+```{r}
+betas.clean = beta[manifest[probe_type == "cg" & !chr %in% c("X","Y")]$index,]
+dim(betas.clean)
+rm(beta)
+nCpG = dim(betas.clean)[1]
+nCpG
+```
+
+
+Add variables that will be adjusted for in the analysis. Need to add race_eth, predicted_sex to existing pheno table.
+
+```{r}
+pheno.a <-read.csv("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\MICS Epigenetics Data\\MICS\\MICS\\pheno.csv")
+pheno.a <-pheno.a[,c("External_Reference","race_eth")]
+pheno.a$race_eth.new <- ifelse((pheno.a$race_eth == 'Non-Hispanic Black'), 'Non-Hispanic Black', "Other")
+pheno<-left_join(pheno, pheno.a, by="External_Reference")
+dim(pheno)
+```
+
+
+Code categorical variables for analysis as a factor. Required for CpGassoc.
+
+```{r}
+library(forcats)
+pheno$Timepoints %<>% factor
+
+pheno$race_eth<-as_factor(pheno$race_eth)
+pheno$predicted_sex<-as_factor(pheno$predicted_sex)
+class(pheno$race_eth)
+class(pheno$predicted_sex)
+```
+
+
+
+
+## Code - Timepoint 3mo. - HIV vs. HEU, Sex & Race & ct5 (CD8, CD4, MO, NK, GR)
+
+#Group - hiv vs. heu - Adjusted for race, sex, cell type 
+
+Subset Timepoint 3 and compare group hiv & heu for both pheno and betas.clean. 57 samples were extract5ed.
+
+hiv & heu at Timepoint 3 = 24 vs. 33.
+
+```{r}
+tp3_hiv_heu <- which(pheno$Timepoints==3 & pheno$Group!="HUU")
+pheno.tp3_hiv_heu <- pheno[tp3_hiv_heu]
+betas.clean.tp3_hiv_heu = betas.clean[,tp3_hiv_heu]
+table(pheno.tp3_hiv_heu$Group)
+
+```
+
+
+Remove cpg sites from betas.clean that cause cpg.assoc errors.
+
+```{r}
+library(stringr)
+
+#retrieving dataids for male and female samples.
+pheno.tp3_hiv_heu[which(predicted_sex=='m'),] %>% select(dataid) -> m1
+pheno.tp3_hiv_heu[which(predicted_sex=='f'),] %>% select(dataid) -> f1
+
+##adding file/data location to align with clean.betas columns.
+m1$file.loc = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\MICS Epigenetics Data\\MICS\\MICS\\All_raw_data"
+f1$file.loc = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\MICS Epigenetics Data\\MICS\\MICS\\All_raw_data"
+
+str_c(m1$file.loc, m1$dataid, sep = "\\") -> m1$betas.id ->m2
+str_c(f1$file.loc, f1$dataid, sep = "\\") -> f1$betas.id ->f2
+
+##creating vectors of male and female samples.
+print(m2)
+as.vector(m2)->m2
+as.vector(f2)->f2
+
+#Subset betas.clean for male and female samples. Remove sites for CpGs with all NAs for males or females.
+betas.clean.new.m <- betas.clean.tp3_hiv_heu[,m2]
+betas.clean.new.f <- betas.clean.tp3_hiv_heu[,f2]
+
+remove.m <- which(rowSums(is.na(betas.clean.new.m)) == length(m1$dataid))
+remove.f <- which(rowSums(is.na(betas.clean.new.f)) == length(f1$dataid))
+
+betas.new.tp3_hiv_heu <- betas.clean.tp3_hiv_heu[-c(remove.m,remove.f),]
+
+#total number of sites removed.
+nrow(betas.clean.tp3_hiv_heu) - nrow(betas.new.tp3_hiv_heu)
+
+```
+
+
+Analyze the association between methylation beta values using betas.new and the phenotype of interest. Results show association between methylation beta values and Group column.
+
+Set up a dummy variable that HIV+=1, HEU=0
+
+```{r}
+pheno.tp3_hiv_heu$hiv.cat= ifelse(pheno.tp3_hiv_heu$Group == "HIV+",1,0)
+
+source("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Ziyi\\Code\\cpg.assoc_mod.R")
+
+resultstp3_hiv_heu.sex.race.ct5 = cpg.assoc_mod(betas.new.tp3_hiv_heu,
+                                                 pheno.tp3_hiv_heu$hiv.cat,
+                                                 covariates=as.data.frame(pheno.tp3_hiv_heu[,.(predicted_sex,race_eth.new,CD8,CD4,NK,GR,MO)]
+                                                 )
+)
+class(resultstp3_hiv_heu.sex.race.ct5)
+names(resultstp3_hiv_heu.sex.race.ct5)
+print(resultstp3_hiv_heu.sex.race.ct5)
+```
+
+Check the top hits by ordering the p.value.
+The effect size here is ~ mean difference in methylation proportion.
+```{r}
+head(cbind(resultstp3_hiv_heu.sex.race.ct5$coefficients, P.value=resultstp3_hiv_heu.sex.race.ct5$results[,3])[order(resultstp3_hiv_heu.sex.race.ct5$results[,3]),])
+```
+
+Check Bonferroni significant sites of resultstp3_hiv_heu.sex.race.ct5 using p-value/ncpg.
+
+```{r}
+table(resultstp3_hiv_heu.sex.race.ct5$results[,3]< 0.05/nCpG)
+```
+#Genomic Inflation
+
+Combine the sites with the manifest and view top sites. Use the combined data to create Volcano plot.
+
+```{r}
+datamanhattp3_hiv_heu.sex.race.ct5 = cbind(resultstp3_hiv_heu.sex.race.ct5$results, resultstp3_hiv_heu.sex.race.ct5$coefficients)
+setDT(datamanhattp3_hiv_heu.sex.race.ct5)
+datamanhattp3_hiv_heu.sex.race.ct5 = datamanhattp3_hiv_heu.sex.race.ct5[,.(probe_id=CPG.Labels,effect.size,std.error,P.value,FDR)]
+
+datamanhattp3_hiv_heu.sex.race.ct5 = merge(datamanhattp3_hiv_heu.sex.race.ct5,manifest[,.(probe_id,chr,mapinfo)],by="probe_id")
+datamanhattp3_hiv_heu.sex.race.ct5[order(P.value)][1:10]
+```
+
+Volcano plot of resultstp3_hiv_heu using Bonferroni threshold. 
+
+#Volcano Plot
+```{r}
+with(datamanhattp3_hiv_heu.sex.race.ct5, plot(effect.size, -log10(P.value), pch=20, main=""))
+abline(h = -log10(0.05/(nCpG)), col = "blue", lty = 2, lwd = 1)
+# abline(h = -log10(2.5e-07), col = "blue", lty = 2, lwd = 1)
+abline(v = c(-0.05,0.05), col = "black", lty = 2, lwd = 1)
+
+with(subset(datamanhattp3_hiv_heu.sex.race.ct5, effect.size< -0.05 & FDR < 0.05), points(effect.size, -log10(P.value), pch=20, col="red"))
+
+with(subset(datamanhattp3_hiv_heu.sex.race.ct5, effect.size > 0.05 & FDR < 0.05), points(effect.size, -log10(P.value), pch=20, col="green"))
+```
+
+Cast the variable "chr" or chromosome to view significant sites by chromosome.
+
+#Manhattan Plot
+```{r}
+datamanhattp3_hiv_heu.sex.race.ct5[,chr:=as.integer(chr)]
+
+qqman::manhattan(datamanhattp3_hiv_heu.sex.race.ct5,chr="chr",bp="mapinfo",p="P.value",snp="probe_id"
+                 ,suggestiveline=FALSE, genomewideline = -log10(0.05/(nCpG)),ylim=c(0,15)
+                 ,main = "Manhattan Plot of mean DNA methylation diference\nbetween HIV+ and HEU at Timepoint 3 - Adjusted")
+```
+
+#Limma
+
+Use lmfit to fit a linear model to clean betas vs. heu status. Use fitted linear model to compute moderated t & F statistics, and log odds by empirical Bayes moderation of standard errors toward a global value.
+
+```{r}
+library(limma,minfi)
+
+pheno.tp3_hiv_heu$Group <- factor(pheno.tp3_hiv_heu$Group, levels = c("HIV+", "HEU"))
+model = model.matrix( ~Group+predicted_sex+race_eth.new+CD8+CD4+NK+GR+MO,data=pheno.tp3_hiv_heu)
+EWAS.limma <- eBayes(lmFit(betas.new.tp3_hiv_heu, design=model))
+```
+
+Check the top sites with statistically significant differential methylation across groups.
+
+```{r}
+Toptp3_hiv_heu.sex.race.ct5<-topTable(EWAS.limma, coef=2, number=Inf, sort.by = "p")
+
+head(Toptp3_hiv_heu.sex.race.ct5)
+```
+
+Calculate the values of the two groups using getEWAP function. Generate dataframe called "average" to save top 500 sites for differential methylation between the two groups.
+
+```{r}
+genenames<-rownames(Toptp3_hiv_heu.sex.race.ct5)
+ewap<-getEAWP(betas.new.tp3_hiv_heu)
+average<- data.frame(hiv=rep(0,500), heu=rep(0,500))
+for (i in 1:1500){average[i,]<-tapply(ewap$exprs[genenames[i],], pheno.tp3_hiv_heu$Group, mean, na.rm=TRUE)
+}
+average$CPG.Labels <- genenames[1:1500]
+```
+
+1. Use IlluminaHumanMethylationEPICanno.ilm10b4.hg19 to annotate the top sites with thier associated genes. 
+2. Match TopTable with Annot output.
+3. Remove unnecessary information.
+
+```{r}
+require(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+
+Annot<-as.data.frame(getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19))
+Annot.Tops<- Annot[match(rownames(Toptp3_hiv_heu.sex.race.ct5),Annot$Name),]
+Annot.Tops<-Annot.Tops[,c("UCSC_RefGene_Name","UCSC_RefGene_Group","Relation_to_Island","chr","pos")]
+Toptp3_hiv_heu.sex.race.ct5<-cbind(Toptp3_hiv_heu.sex.race.ct5, Annot.Tops)
+head(Toptp3_hiv_heu.sex.race.ct5)
+
+```
+
+Save results. Save logFC >= .05 sites as well as FDR, Bonferroni significant sites.
+
+```{r}
+Toptp3_hiv_heu.sex.race.ct5 <- tibble::rownames_to_column(Toptp3_hiv_heu.sex.race.ct5, "CPG.Labels")
+cpgassoc.final3 <- cbind(resultstp3_hiv_heu.sex.race.ct5$results, resultstp3_hiv_heu.sex.race.ct5$coefficients)
+cpgassoc.final3$HIV.avg = cpgassoc.final3$adj.intercept + cpgassoc.final3$effect.size
+cpgassoc.final3$HEU.avg = cpgassoc.final3$adj.intercept
+Toptp3_hiv_heu.sex.race.ct5 <- left_join(Toptp3_hiv_heu.sex.race.ct5, cpgassoc.final3, by = "CPG.Labels")
+
+toptp3_hiv_heu.sex.race.ct5 <- left_join(Toptp3_hiv_heu.sex.race.ct5, average, by = "CPG.Labels")
+toptp3_hiv_heu.sex.race.ct5.Bonf<- subset(toptp3_hiv_heu.sex.race.ct5, toptp3_hiv_heu.sex.race.ct5$Holm.sig=="TRUE")
+
+write.csv(toptp3_hiv_heu.sex.race.ct5.Bonf, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_heu-sex-race-ct5.rerun.csv")
+
+toptp3_hiv_heu.sex.race.ct5.Bonf.logfc<- subset(toptp3_hiv_heu.sex.race.ct5.Bonf, abs(toptp3_hiv_heu.sex.race.ct5.Bonf$logFC)>=0.05)
+dim(toptp3_hiv_heu.sex.race.ct5.Bonf.logfc)
+
+write.csv(toptp3_hiv_heu.sex.race.ct5.Bonf.logfc, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_heu-sex-race-ct5_logFC_Final.rerun.csv")
+
+toptp3_hiv_heu.sex.race.ct5.FDR <- inner_join(Toptp3_hiv_heu.sex.race.ct5, resultstp3_hiv_heu.sex.race.ct5$FDR.sig, by = "CPG.Labels")
+toptp3_hiv_heu.sex.race.ct5.FDR <- left_join(toptp3_hiv_heu.sex.race.ct5.FDR, average, by = "CPG.Labels")
+
+write.csv(toptp3_hiv_heu.sex.race.ct5.FDR[1:100,], file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_heu-sex-race-ct5_FDR.rerun.csv")
+
+toptp3_hiv_heu.sex.race.ct5.FDR.logfc <- toptp3_hiv_heu.sex.race.ct5.FDR[which(abs(toptp3_hiv_heu.sex.race.ct5.FDR$logFC)>0.05), ]
+dim(toptp3_hiv_heu.sex.race.ct5.FDR.logfc)
+
+write.csv(toptp3_hiv_heu.sex.race.ct5.FDR.logfc, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_heu-sex-race-ct5_FDR_logFC_Final.rerun.csv")
+
+```
+
+Visualizing the logFC for the top 50 sites.
+```{r}
+cpg_hist <- Toptp3_hiv_heu.sex.race.ct5[1:50,1:2]
+cpg_hist$CPG.Labels <- factor(cpg_hist$CPG.Labels,levels = rev(cpg_hist$CPG.Labels))
+ggplot(data = cpg_hist, aes(x = CPG.Labels , y = logFC)) + 
+  geom_bar(aes(fill = logFC>0), stat = "identity", show.legend = F) + coord_flip() +
+  ggtitle("logFC of the top 50 CpG sites\n between HIV+ and HEU group adjusted by sex, race, cell type at Timepoint 3")
+```
+
+```{r}
+cpg_hist <- toptp3_hiv_heu.sex.race.ct5.Bonf[,1:2]
+cpg_hist$CPG.Labels <- factor(cpg_hist$CPG.Labels,levels = rev(cpg_hist$CPG.Labels))
+ggplot(data = cpg_hist, aes(x = CPG.Labels , y = logFC)) + 
+  geom_bar(aes(fill = logFC>0), stat = "identity", show.legend = F) + coord_flip() +
+  ggtitle("logFC of the Bonferroni CpG sites between HIV+ and HEU group \n adjusted by sex, race, cell type at Timepoint 3") 
+
+```
+
+#Region Analysis 
+#Group - hiv vs. heu - Statistically Significant Regions (FDR)
+
+Load DMRcate package for regional DNA methylation analysis.
+
+Run regional analysis using pre-processed, clean betas with sex chromosome probes removed. Use modelheu.ct5 as design model, fdr=0.05. 
+
+```{r}
+suppressMessages(library(DMRcate))
+myannotation <-cpg.annotate(datatype = "array", na.omit(betas.new.tp3_hiv_heu), what = "Beta",arraytype = "EPIC",analysis.type = "differential",design = model, coef=2, fdr=.05)
+```
+```{r}
+dmrcoutput.tp3_hiv_heu.sex.race.ct5 <- dmrcate(myannotation, lambda = 1000, C=2)
+```
+
+```{r}
+results.tp3_hiv_heu.sex.race.ct5.ranges <- extractRanges(dmrcoutput.tp3_hiv_heu.sex.race.ct5, genome="hg19")
+head(results.tp3_hiv_heu.sex.race.ct5.ranges)
+```
+
+```{r}
+write.csv(results.tp3_hiv_heu.sex.race.ct5.ranges, file="C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\regions_tp3_hiv_heu-sex-race-ct5.csv")
+
+results.tp3_hiv_heu.sex.race.ct5.ranges.logfc <- results.tp3_hiv_heu.sex.race.ct5.ranges[which(abs(results.tp3_hiv_heu.sex.race.ct5.ranges$meandiff)>0.05), ]
+
+results.tp3_hiv_heu.sex.race.ct5.ranges.logfc.sig <- subset(results.tp3_hiv_heu.sex.race.ct5.ranges.logfc,results.tp3_hiv_heu.sex.race.ct5.ranges.logfc$Stouffer<0.05)
+length(results.tp3_hiv_heu.sex.race.ct5.ranges.logfc.sig$meandiff)
+
+write.csv(results.tp3_hiv_heu.sex.race.ct5.ranges.logfc.sig, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\regions_tp3_hiv_heu-sex-race-ct5-meandiff-sig_final_rerun.csv")
+
+```
+
+  
+Perform gene ontology testing of DMRs for Illumina methlylation array data using goregion function.
+
+Load package missMethyl
+```{r}
+library(missMethyl)
+```
+```{r}
+enrichment_GO.tp3_hiv_heu.sex.race.ct5 <- goregion(results.tp3_hiv_heu.sex.race.ct5.ranges, all.cpg= rownames(betas.new.tp3_hiv_heu), collection="GO", array.type = "EPIC")
+```
+
+```{r}
+enrichment_GO.tp3_hiv_heu.sex.race.ct5 <- enrichment_GO.tp3_hiv_heu.sex.race.ct5[order(enrichment_GO.tp3_hiv_heu.sex.race.ct5$P.DE),] 
+
+topGSA(enrichment_GO.tp3_hiv_heu.sex.race.ct5, number = 10)
+```
+
+Save file.
+```{r}
+write.csv(enrichment_GO.tp3_hiv_heu.sex.race.ct5, file="C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\GO_tp3_hiv_heu-sex-race-ct5_rerun.csv")
+```
+
+
+## Code - Timepoint 3mo. - HIV vs. huu, Sex & Race & ct5 (CD8, CD4, MO, NK, GR)
+
+#Group - hiv vs. huu - Adjusted for race, sex, cell type 
+
+Subset Timepoint 3 and compare group hiv & huu for both pheno and betas.clean. 57 samples were extracted
+
+hiv & huu at Timepoint 3 = 24 vs. 33.
+
+```{r}
+tp3_hiv_huu <- which(pheno$Timepoints==3 & pheno$Group!="HEU")
+pheno.tp3_hiv_huu <- pheno[tp3_hiv_huu]
+betas.clean.tp3_hiv_huu = betas.clean[,tp3_hiv_huu]
+table(pheno.tp3_hiv_huu$Group)
+
+```
+
+Remove cpg sites from betas.clean that cause cpg.assoc errors.
+
+```{r}
+library(stringr)
+
+#retrieving dataids for male and female samples.
+pheno.tp3_hiv_huu[which(predicted_sex=='m'),] %>% select(dataid) -> m3
+pheno.tp3_hiv_huu[which(predicted_sex=='f'),] %>% select(dataid) -> f3
+
+##adding file/data location to align with clean.betas columns.
+m3$file.loc = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\MICS Epigenetics Data\\MICS\\MICS\\All_raw_data"
+f3$file.loc = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\MICS Epigenetics Data\\MICS\\MICS\\All_raw_data"
+
+str_c(m3$file.loc, m3$dataid, sep = "\\") -> m3$betas.id ->m4
+str_c(f3$file.loc, f3$dataid, sep = "\\") -> f3$betas.id ->f4
+
+##creating vectors of male and female samples.
+print(m4)
+as.vector(m4)->m4
+as.vector(f4)->f4
+
+#Subset betas.clean for male and female samples. Remove sites for CpGs with all NAs for males or females.
+betas.clean.new.m1 <- betas.clean.tp3_hiv_huu[,m4]
+betas.clean.new.f1 <- betas.clean.tp3_hiv_huu[,f4]
+
+remove.m1 <- which(rowSums(is.na(betas.clean.new.m1)) == length(m3$dataid))
+remove.f1 <- which(rowSums(is.na(betas.clean.new.f1)) == length(f3$dataid))
+
+betas.new.tp3_hiv_huu <- betas.clean.tp3_hiv_huu[-c(remove.m1,remove.f1),]
+
+#total number of sites removed.
+nrow(betas.clean.tp3_hiv_huu) - nrow(betas.new.tp3_hiv_huu)
+
+```
+
+
+Analyze the association between methylation beta values using betas.new and the phenotype of interest. Results show association between methylation beta values and Group column.
+
+Set up a dummy variable that HIV+=1, HUU=0
+
+```{r}
+pheno.tp3_hiv_huu$hiv.cat= ifelse(pheno.tp3_hiv_huu$Group == "HIV+",1,0)
+
+source("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Ziyi\\Code\\cpg.assoc_mod.R")
+
+resultstp3_hiv_huu.sex.race.ct5 = cpg.assoc_mod(betas.new.tp3_hiv_huu,
+                                                 pheno.tp3_hiv_huu$hiv.cat,
+                                                 covariates=as.data.frame(pheno.tp3_hiv_huu[,.(predicted_sex,race_eth.new,CD8,CD4,NK,GR,MO)]
+                                                 )
+)
+class(resultstp3_hiv_huu.sex.race.ct5)
+names(resultstp3_hiv_huu.sex.race.ct5)
+print(resultstp3_hiv_huu.sex.race.ct5)
+```
+
+Check the top hits by ordering the p.value.
+The effect size here is ~ mean difference in methylation proportion.
+```{r}
+head(cbind(resultstp3_hiv_huu.sex.race.ct5$coefficients, P.value=resultstp3_hiv_huu.sex.race.ct5$results[,3])[order(resultstp3_hiv_huu.sex.race.ct5$results[,3]),])
+```
+
+Check Bonferroni significant sites of resultstp3_hiv_huu.sex.race.ct5 using p-value/ncpg.
+
+```{r}
+table(resultstp3_hiv_huu.sex.race.ct5$results[,3]< 0.05/nCpG)
+```
+
+#Genomic Inflation
+
+Combine the sites with the manifest and view top sites. Use the combined data to create Volcano plot.
+
+```{r}
+datamanhattp3_hiv_huu.sex.race.ct5 = cbind(resultstp3_hiv_huu.sex.race.ct5$results, resultstp3_hiv_huu.sex.race.ct5$coefficients)
+setDT(datamanhattp3_hiv_huu.sex.race.ct5)
+datamanhattp3_hiv_huu.sex.race.ct5 = datamanhattp3_hiv_huu.sex.race.ct5[,.(probe_id=CPG.Labels,effect.size,std.error,P.value,FDR)]
+
+datamanhattp3_hiv_huu.sex.race.ct5 = merge(datamanhattp3_hiv_huu.sex.race.ct5,manifest[,.(probe_id,chr,mapinfo)],by="probe_id")
+datamanhattp3_hiv_huu.sex.race.ct5[order(P.value)][1:10]
+```
+
+Volcano plot of resultstp3_hiv_huu using Bonferroni threshold. 
+
+#Volcano Plot
+```{r}
+with(datamanhattp3_hiv_huu.sex.race.ct5, plot(effect.size, -log10(P.value), pch=20, main=""))
+abline(h = -log10(0.05/(nCpG)), col = "blue", lty = 2, lwd = 1)
+# abline(h = -log10(2.5e-07), col = "blue", lty = 2, lwd = 1)
+abline(v = c(-0.05,0.05), col = "black", lty = 2, lwd = 1)
+
+with(subset(datamanhattp3_hiv_huu.sex.race.ct5, effect.size< -0.05 & FDR < 0.05), points(effect.size, -log10(P.value), pch=20, col="red"))
+
+with(subset(datamanhattp3_hiv_huu.sex.race.ct5, effect.size > 0.05 & FDR < 0.05), points(effect.size, -log10(P.value), pch=20, col="green"))
+```
+
+Cast the variable "chr" or chromosome to view significant sites by chromosome.
+
+#Manhattan Plot
+```{r}
+datamanhattp3_hiv_huu.sex.race.ct5[,chr:=as.integer(chr)]
+
+qqman::manhattan(datamanhattp3_hiv_huu.sex.race.ct5,chr="chr",bp="mapinfo",p="P.value",snp="probe_id"
+                 ,suggestiveline=FALSE, genomewideline = -log10(0.05/(nCpG)),ylim=c(0,15)
+                 ,main = "Manhattan Plot of mean DNA methylation diference\nbetween HIV+ and huu at Timepoint 3 - Adjusted")
+```
+
+#Limma
+
+Use lmfit to fit a linear model to clean betas vs. huu status. Use fitted linear model to compute moderated t & F statistics, and log odds by empirical Bayes moderation of standard errors toward a global value.
+
+```{r}
+library(limma,minfi)
+
+pheno.tp3_hiv_huu$Group <- factor(pheno.tp3_hiv_huu$Group, levels = c("HIV+", "HUU"))
+model = model.matrix( ~Group+predicted_sex+race_eth.new+CD8+CD4+NK+GR+MO,data=pheno.tp3_hiv_huu)
+EWAS.limma <- eBayes(lmFit(betas.new.tp3_hiv_huu, design=model))
+```
+
+Check the top sites with statistically significant differential methylation across groups.
+
+```{r}
+Toptp3_hiv_huu.sex.race.ct5<-topTable(EWAS.limma, coef=2, number=Inf, sort.by = "p")
+
+head(Toptp3_hiv_huu.sex.race.ct5)
+```
+
+Calculate the values of the two groups using getEWAP function. Generate dataframe called "average" to save top 500 sites for differential methylation between the two groups.
+
+```{r}
+genenames<-rownames(Toptp3_hiv_huu.sex.race.ct5)
+ewap<-getEAWP(betas.new.tp3_hiv_huu)
+average<- data.frame(hiv=rep(0,500), huu=rep(0,500))
+for (i in 1:1500){average[i,]<-tapply(ewap$exprs[genenames[i],], pheno.tp3_hiv_huu$Group, mean, na.rm=TRUE)
+}
+average$CPG.Labels <- genenames[1:1500]
+```
+
+1. Use IlluminaHumanMethylationEPICanno.ilm10b4.hg19 to annotate the top sites with thier associated genes. 
+2. Match TopTable with Annot output.
+3. Remove unnecessary information.
+
+```{r}
+require(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+
+Annot<-as.data.frame(getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19))
+Annot.Tops<- Annot[match(rownames(Toptp3_hiv_huu.sex.race.ct5),Annot$Name),]
+Annot.Tops<-Annot.Tops[,c("UCSC_RefGene_Name","UCSC_RefGene_Group","Relation_to_Island","chr","pos")]
+Toptp3_hiv_huu.sex.race.ct5<-cbind(Toptp3_hiv_huu.sex.race.ct5, Annot.Tops)
+head(Toptp3_hiv_huu.sex.race.ct5)
+
+```
+
+Save results. Save logFC >= .05 sites as well as FDR, Bonferroni significant sites.
+
+```{r}
+Toptp3_hiv_huu.sex.race.ct5 <- tibble::rownames_to_column(Toptp3_hiv_huu.sex.race.ct5, "CPG.Labels")
+cpgassoc.final4 <- cbind(resultstp3_hiv_huu.sex.race.ct5$results, resultstp3_hiv_huu.sex.race.ct5$coefficients)
+cpgassoc.final4$HIV.avg = cpgassoc.final4$adj.intercept + cpgassoc.final4$effect.size
+cpgassoc.final4$HUU.avg = cpgassoc.final4$adj.intercept
+Toptp3_hiv_huu.sex.race.ct5 <- left_join(Toptp3_hiv_huu.sex.race.ct5, cpgassoc.final4, by = "CPG.Labels")
+
+toptp3_hiv_huu.sex.race.ct5 <- left_join(Toptp3_hiv_huu.sex.race.ct5, average, by = "CPG.Labels")
+toptp3_hiv_huu.sex.race.ct5.Bonf<- subset(toptp3_hiv_huu.sex.race.ct5, toptp3_hiv_huu.sex.race.ct5$Holm.sig=="TRUE")
+
+write.csv(toptp3_hiv_huu.sex.race.ct5.Bonf, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_huu-sex-race-ct5.rerun.csv")
+
+toptp3_hiv_huu.sex.race.ct5.Bonf.logfc<- subset(toptp3_hiv_huu.sex.race.ct5.Bonf, abs(toptp3_hiv_huu.sex.race.ct5.Bonf$logFC)>=0.05)
+dim(toptp3_hiv_huu.sex.race.ct5.Bonf.logfc)
+
+write.csv(toptp3_hiv_huu.sex.race.ct5.Bonf.logfc, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_huu-sex-race-ct5_logFC_Final.rerun.csv")
+
+toptp3_hiv_huu.sex.race.ct5.FDR <- inner_join(Toptp3_hiv_huu.sex.race.ct5, resultstp3_hiv_huu.sex.race.ct5$FDR.sig, by = "CPG.Labels")
+toptp3_hiv_huu.sex.race.ct5.FDR <- left_join(toptp3_hiv_huu.sex.race.ct5.FDR, average, by = "CPG.Labels")
+
+write.csv(toptp3_hiv_huu.sex.race.ct5.FDR[1:100,], file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_huu-sex-race-ct5_FDR.rerun.csv")
+
+toptp3_hiv_huu.sex.race.ct5.FDR.logfc <- toptp3_hiv_huu.sex.race.ct5.FDR[which(abs(toptp3_hiv_huu.sex.race.ct5.FDR$logFC)>0.05), ]
+dim(toptp3_hiv_huu.sex.race.ct5.FDR.logfc)
+
+write.csv(toptp3_hiv_huu.sex.race.ct5.FDR.logfc, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_hiv_huu-sex-race-ct5_FDR_logFC_Final.rerun.csv")
+
+```
+
+Visualizing the logFC for the top 50 sites.
+```{r}
+cpg_hist <- Toptp3_hiv_huu.sex.race.ct5[1:50,1:2]
+cpg_hist$CPG.Labels <- factor(cpg_hist$CPG.Labels,levels = rev(cpg_hist$CPG.Labels))
+ggplot(data = cpg_hist, aes(x = CPG.Labels , y = logFC)) + 
+  geom_bar(aes(fill = logFC>0), stat = "identity", show.legend = F) + coord_flip() +
+  ggtitle("logFC of the top 50 CpG sites\n between HIV+ and huu group adjusted by sex, race, cell type at Timepoint 3")
+```
+
+```{r}
+cpg_hist <- toptp3_hiv_huu.sex.race.ct5.Bonf[,1:2]
+cpg_hist$CPG.Labels <- factor(cpg_hist$CPG.Labels,levels = rev(cpg_hist$CPG.Labels))
+ggplot(data = cpg_hist, aes(x = CPG.Labels , y = logFC)) + 
+  geom_bar(aes(fill = logFC>0), stat = "identity", show.legend = F) + coord_flip() +
+  ggtitle("logFC of the Bonferroni CpG sites between HIV+ and huu group \n adjusted by sex, race, cell type at Timepoint 3") 
+
+```
+
+#Region Analysis 
+#Group - hiv vs. huu - Statistically Significant Regions (FDR)
+
+Load DMRcate package for regional DNA methylation analysis.
+
+Run regional analysis using pre-processed, clean betas with sex chromosome probes removed. Use modelhuu.ct5 as design model, fdr=0.05. 
+
+```{r}
+suppressMessages(library(DMRcate))
+myannotation <-cpg.annotate(datatype = "array", na.omit(betas.new.tp3_hiv_huu), what = "Beta",arraytype = "EPIC",analysis.type = "differential",design = model, coef=2, fdr=.05)
+```
+```{r}
+dmrcoutput.tp3_hiv_huu.sex.race.ct5 <- dmrcate(myannotation, lambda = 1000, C=2)
+```
+
+```{r}
+results.tp3_hiv_huu.sex.race.ct5.ranges <- extractRanges(dmrcoutput.tp3_hiv_huu.sex.race.ct5, genome="hg19")
+head(results.tp3_hiv_huu.sex.race.ct5.ranges)
+```
+
+```{r}
+write.csv(results.tp3_hiv_huu.sex.race.ct5.ranges, file="C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\regions_tp3_hiv_huu-sex-race-ct5.csv")
+
+results.tp3_hiv_huu.sex.race.ct5.ranges.logfc <- results.tp3_hiv_huu.sex.race.ct5.ranges[which(abs(results.tp3_hiv_huu.sex.race.ct5.ranges$meandiff)>0.05), ]
+
+results.tp3_hiv_huu.sex.race.ct5.ranges.logfc.sig <- subset(results.tp3_hiv_huu.sex.race.ct5.ranges.logfc,results.tp3_hiv_huu.sex.race.ct5.ranges.logfc$Stouffer<0.05)
+length(results.tp3_hiv_huu.sex.race.ct5.ranges.logfc.sig$meandiff)
+
+write.csv(results.tp3_hiv_huu.sex.race.ct5.ranges.logfc.sig, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\regions_tp3_hiv_huu-sex-race-ct5-meandiff-sig_final_rerun.csv")
+
+```
+  
+  
+Perform gene ontology testing of DMRs for Illumina methlylation array data using goregion function.
+
+Load package missMethyl
+```{r}
+library(missMethyl)
+```
+```{r}
+enrichment_GO.tp3_hiv_huu.sex.race.ct5 <- goregion(results.tp3_hiv_huu.sex.race.ct5.ranges, all.cpg= rownames(betas.new.tp3_hiv_huu), collection="GO", array.type = "EPIC")
+```
+
+```{r}
+enrichment_GO.tp3_hiv_huu.sex.race.ct5 <- enrichment_GO.tp3_hiv_huu.sex.race.ct5[order(enrichment_GO.tp3_hiv_huu.sex.race.ct5$P.DE),] 
+
+topGSA(enrichment_GO.tp3_hiv_huu.sex.race.ct5, number = 10)
+```
+
+Save file.
+```{r}
+write.csv(enrichment_GO.tp3_hiv_huu.sex.race.ct5, file="C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\GO_tp3_hiv_huu-sex-race-ct5_rerun.csv")
+```
+
+
+
+## Code - Timepoint 3mo. - Heu vs. huu, Sex & Race & ct5 (CD8, CD4, MO, NK, GR)
+
+#Group - Heu vs. Huu - Adjusted for race, sex, cell type 
+
+Subset Timepoint 3 and compare group heu & huu for both pheno and betas.clean. 57 samples were extracted
+
+heu & huu at Timepoint 3 = 24 vs. 33.
+
+```{r}
+tp3_heu_huu <- which(pheno$Timepoints==3 & pheno$Group!="HIV+")
+pheno.tp3_heu_huu <- pheno[tp3_heu_huu]
+betas.clean.tp3_heu_huu = betas.clean[,tp3_heu_huu]
+table(pheno.tp3_heu_huu$Group)
+
+```
+
+
+Remove cpg sites from betas.clean that cause cpg.assoc errors.
+
+```{r}
+library(stringr)
+
+#retrieving dataids for male and female samples.
+pheno.tp3_heu_huu[which(predicted_sex=='m'),] %>% select(dataid) -> m5
+pheno.tp3_heu_huu[which(predicted_sex=='f'),] %>% select(dataid) -> f5
+
+##adding file/data location to align with clean.betas columns.
+m5$file.loc = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\MICS Epigenetics Data\\MICS\\MICS\\All_raw_data"
+f5$file.loc = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\MICS Epigenetics Data\\MICS\\MICS\\All_raw_data"
+
+str_c(m5$file.loc, m5$dataid, sep = "\\") -> m5$betas.id ->m6
+str_c(f5$file.loc, f5$dataid, sep = "\\") -> f5$betas.id ->f6
+
+##creating vectors of male and female samples.
+print(m6)
+as.vector(m6)->m6
+as.vector(f6)->f6
+
+#Subset betas.clean for male and female samples. Remove sites for CpGs with all NAs for males or females.
+betas.clean.new.m2 <- betas.clean.tp3_heu_huu[,m6]
+betas.clean.new.f2 <- betas.clean.tp3_heu_huu[,f6]
+
+remove.m2 <- which(rowSums(is.na(betas.clean.new.m2)) == length(m5$dataid))
+remove.f2 <- which(rowSums(is.na(betas.clean.new.f2)) == length(f5$dataid))
+
+betas.new.tp3_heu_huu <- betas.clean.tp3_heu_huu[-c(remove.m2,remove.f2),]
+
+#total number of sites removed.
+nrow(betas.clean.tp3_heu_huu) - nrow(betas.new.tp3_heu_huu)
+
+```
+
+
+Analyze the association between methylation beta values using betas.new and the phenotype of interest. Results show association between methylation beta values and Group column.
+
+Set up a dummy variable that HEU=1, HUU=0
+
+```{r}
+pheno.tp3_heu_huu$hiv.cat= ifelse(pheno.tp3_heu_huu$Group == "HEU",1,0)
+
+source("C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Ziyi\\Code\\cpg.assoc_mod.R")
+
+resultstp3_heu_huu.sex.race.ct5 = cpg.assoc_mod(betas.new.tp3_heu_huu,
+                                                 pheno.tp3_heu_huu$hiv.cat,
+                                                 covariates=as.data.frame(pheno.tp3_heu_huu[,.(predicted_sex,race_eth.new,CD8,CD4,NK,GR,MO)]
+                                                 )
+)
+class(resultstp3_heu_huu.sex.race.ct5)
+names(resultstp3_heu_huu.sex.race.ct5)
+print(resultstp3_heu_huu.sex.race.ct5)
+```
+
+Check the top hits by ordering the p.value.
+The effect size here is ~ mean difference in methylation proportion.
+```{r}
+head(cbind(resultstp3_heu_huu.sex.race.ct5$coefficients, P.value=resultstp3_heu_huu.sex.race.ct5$results[,3])[order(resultstp3_heu_huu.sex.race.ct5$results[,3]),])
+```
+
+Check Bonferroni significant sites of resultstp3_heu_huu.sex.race.ct5 using p-value/ncpg.
+
+```{r}
+table(resultstp3_heu_huu.sex.race.ct5$results[,3]< 0.05/nCpG)
+```
+#Genomic Inflation
+
+Combine the sites with the manifest and view top sites. Use the combined data to create Volcano plot.
+
+```{r}
+datamanhattp3_heu_huu.sex.race.ct5 = cbind(resultstp3_heu_huu.sex.race.ct5$results, resultstp3_heu_huu.sex.race.ct5$coefficients)
+setDT(datamanhattp3_heu_huu.sex.race.ct5)
+datamanhattp3_heu_huu.sex.race.ct5 = datamanhattp3_heu_huu.sex.race.ct5[,.(probe_id=CPG.Labels,effect.size,std.error,P.value,FDR)]
+
+datamanhattp3_heu_huu.sex.race.ct5 = merge(datamanhattp3_heu_huu.sex.race.ct5,manifest[,.(probe_id,chr,mapinfo)],by="probe_id")
+datamanhattp3_heu_huu.sex.race.ct5[order(P.value)][1:10]
+```
+
+Volcano plot of resultstp3_heu_huu using Bonferroni threshold. 
+
+#Volcano Plot
+```{r}
+with(datamanhattp3_heu_huu.sex.race.ct5, plot(effect.size, -log10(P.value), pch=20, main=""))
+abline(h = -log10(0.05/(nCpG)), col = "blue", lty = 2, lwd = 1)
+# abline(h = -log10(2.5e-07), col = "blue", lty = 2, lwd = 1)
+abline(v = c(-0.05,0.05), col = "black", lty = 2, lwd = 1)
+
+with(subset(datamanhattp3_heu_huu.sex.race.ct5, effect.size< -0.05 & FDR < 0.05), points(effect.size, -log10(P.value), pch=20, col="red"))
+
+with(subset(datamanhattp3_heu_huu.sex.race.ct5, effect.size > 0.05 & FDR < 0.05), points(effect.size, -log10(P.value), pch=20, col="green"))
+```
+
+Cast the variable "chr" or chromosome to view significant sites by chromosome.
+
+#Manhattan Plot
+```{r}
+datamanhattp3_heu_huu.sex.race.ct5[,chr:=as.integer(chr)]
+
+qqman::manhattan(datamanhattp3_heu_huu.sex.race.ct5,chr="chr",bp="mapinfo",p="P.value",snp="probe_id"
+                 ,suggestiveline=FALSE, genomewideline = -log10(0.05/(nCpG)),ylim=c(0,15)
+                 ,main = "Manhattan Plot of mean DNA methylation diference\nbetween HEU and huu at Timepoint 3 - Adjusted")
+```
+
+#Limma
+
+Use lmfit to fit a linear model to clean betas vs. huu status. Use fitted linear model to compute moderated t & F statistics, and log odds by empirical Bayes moderation of standard errors toward a global value.
+
+```{r}
+library(limma,minfi)
+
+pheno.tp3_heu_huu$Group <- factor(pheno.tp3_heu_huu$Group, levels = c("HEU", "HUU"))
+model = model.matrix( ~Group+predicted_sex+race_eth.new+CD8+CD4+NK+GR+MO,data=pheno.tp3_heu_huu)
+EWAS.limma <- eBayes(lmFit(betas.new.tp3_heu_huu, design=model))
+```
+
+Check the top sites with statistically significant differential methylation across groups.
+
+```{r}
+Toptp3_heu_huu.sex.race.ct5<-topTable(EWAS.limma, coef=2, number=Inf, sort.by = "p")
+
+head(Toptp3_heu_huu.sex.race.ct5)
+```
+
+Calculate the values of the two groups using getEWAP function. Generate dataframe called "average" to save top 500 sites for differential methylation between the two groups.
+
+```{r}
+genenames<-rownames(Toptp3_heu_huu.sex.race.ct5)
+ewap<-getEAWP(betas.new.tp3_heu_huu)
+average<- data.frame(heu=rep(0,500), huu=rep(0,500))
+for (i in 1:1500){average[i,]<-tapply(ewap$exprs[genenames[i],], pheno.tp3_heu_huu$Group, mean, na.rm=TRUE)
+}
+average$CPG.Labels <- genenames[1:1500]
+```
+
+1. Use IlluminaHumanMethylationEPICanno.ilm10b4.hg19 to annotate the top sites with thier associated genes. 
+2. Match TopTable with Annot output.
+3. Remove unnecessary information.
+
+```{r}
+require(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+
+Annot<-as.data.frame(getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19))
+Annot.Tops<- Annot[match(rownames(Toptp3_heu_huu.sex.race.ct5),Annot$Name),]
+Annot.Tops<-Annot.Tops[,c("UCSC_RefGene_Name","UCSC_RefGene_Group","Relation_to_Island","chr","pos")]
+Toptp3_heu_huu.sex.race.ct5<-cbind(Toptp3_heu_huu.sex.race.ct5, Annot.Tops)
+head(Toptp3_heu_huu.sex.race.ct5)
+
+```
+
+Save results. Save logFC >= .05 sites as well as FDR, Bonferroni significant sites.
+
+```{r}
+Toptp3_heu_huu.sex.race.ct5 <- tibble::rownames_to_column(Toptp3_heu_huu.sex.race.ct5, "CPG.Labels")
+Toptp3_heu_huu.sex.race.ct5 <- left_join(Toptp3_heu_huu.sex.race.ct5, resultstp3_heu_huu.sex.race.ct5$results, by = "CPG.Labels")
+
+toptp3_heu_huu.sex.race.ct5 <- left_join(Toptp3_heu_huu.sex.race.ct5, average, by = "CPG.Labels")
+toptp3_heu_huu.sex.race.ct5.Bonf<- subset(toptp3_heu_huu.sex.race.ct5, toptp3_heu_huu.sex.race.ct5$Holm.sig=="TRUE")
+
+write.csv(toptp3_heu_huu.sex.race.ct5.Bonf, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_heu_huu-sex-race-ct5.rerun.csv")
+
+toptp3_heu_huu.sex.race.ct5.Bonf.logfc<- subset(toptp3_heu_huu.sex.race.ct5.Bonf, abs(toptp3_heu_huu.sex.race.ct5.Bonf$logFC)>=0.05)
+dim(toptp3_heu_huu.sex.race.ct5.Bonf.logfc)
+
+write.csv(toptp3_heu_huu.sex.race.ct5.Bonf.logfc, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_heu_huu-sex-race-ct5_logFC_Final.rerun.csv")
+
+toptp3_heu_huu.sex.race.ct5.FDR <- inner_join(Toptp3_heu_huu.sex.race.ct5, resultstp3_heu_huu.sex.race.ct5$FDR.sig, by = "CPG.Labels")
+toptp3_heu_huu.sex.race.ct5.FDR <- left_join(toptp3_heu_huu.sex.race.ct5.FDR, average, by = "CPG.Labels")
+
+write.csv(toptp3_heu_huu.sex.race.ct5.FDR[1:100,], file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_heu_huu-sex-race-ct5_FDR.rerun.csv")
+
+toptp3_heu_huu.sex.race.ct5.FDR.logfc <- toptp3_heu_huu.sex.race.ct5.FDR[which(abs(toptp3_heu_huu.sex.race.ct5.FDR$logFC)>0.05), ]
+dim(toptp3_heu_huu.sex.race.ct5.FDR.logfc)
+
+write.csv(toptp3_heu_huu.sex.race.ct5.FDR.logfc, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\toptp3_heu_huu-sex-race-ct5_FDR_logFC_Final.rerun.csv")
+
+```
+
+Visualizing the logFC for the top 50 sites.
+```{r}
+cpg_hist <- Toptp3_heu_huu.sex.race.ct5[1:50,1:2]
+cpg_hist$CPG.Labels <- factor(cpg_hist$CPG.Labels,levels = rev(cpg_hist$CPG.Labels))
+ggplot(data = cpg_hist, aes(x = CPG.Labels , y = logFC)) + 
+  geom_bar(aes(fill = logFC>0), stat = "identity", show.legend = F) + coord_flip() +
+  ggtitle("logFC of the top 50 CpG sites\n between HEU and huu group adjusted by sex, race, cell type at Timepoint 3")
+```
+
+```{r}
+cpg_hist <- toptp3_heu_huu.sex.race.ct5.Bonf[,1:2]
+cpg_hist$CPG.Labels <- factor(cpg_hist$CPG.Labels,levels = rev(cpg_hist$CPG.Labels))
+ggplot(data = cpg_hist, aes(x = CPG.Labels , y = logFC)) + 
+  geom_bar(aes(fill = logFC>0), stat = "identity", show.legend = F) + coord_flip() +
+  ggtitle("logFC of the Bonferroni CpG sites between HEU and huu group \n adjusted by sex, race, cell type at Timepoint 3") 
+
+```
+
+#Region Analysis 
+#Group - Heu vs. Huu - Statistically Significant Regions (FDR)
+
+Load DMRcate package for regional DNA methylation analysis.
+
+Run regional analysis using pre-processed, clean betas with sex chromosome probes removed. Use modelhuu.ct5 as design model, fdr=0.05. 
+
+```{r}
+suppressMessages(library(DMRcate))
+myannotation <-cpg.annotate(datatype = "array", na.omit(betas.new.tp3_heu_huu), what = "Beta",arraytype = "EPIC",analysis.type = "differential",design = model, coef=2, fdr=.05)
+```
+```{r}
+dmrcoutput.tp3_heu_huu.sex.race.ct5 <- dmrcate(myannotation, lambda = 1000, C=2)
+```
+
+```{r}
+results.tp3_heu_huu.sex.race.ct5.ranges <- extractRanges(dmrcoutput.tp3_heu_huu.sex.race.ct5, genome="hg19")
+head(results.tp3_heu_huu.sex.race.ct5.ranges)
+```
+
+```{r}
+write.csv(results.tp3_heu_huu.sex.race.ct5.ranges, file="C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\regions_tp3_heu_huu-sex-race-ct5.csv")
+
+results.tp3_heu_huu.sex.race.ct5.ranges.logfc <- results.tp3_heu_huu.sex.race.ct5.ranges[which(abs(results.tp3_heu_huu.sex.race.ct5.ranges$meandiff)>0.05), ]
+
+results.tp3_heu_huu.sex.race.ct5.ranges.logfc.sig <- subset(results.tp3_heu_huu.sex.race.ct5.ranges.logfc,results.tp3_heu_huu.sex.race.ct5.ranges.logfc$Stouffer<0.05)
+length(results.tp3_heu_huu.sex.race.ct5.ranges.logfc.sig$meandiff)
+
+write.csv(results.tp3_heu_huu.sex.race.ct5.ranges.logfc.sig, file = "C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\regions_tp3_heu_huu-sex-race-ct5-meandiff-sig_final_rerun.csv")
+
+```
+
+Perform gene ontology testing of DMRs for Illumina methlylation array data using goregion function.
+
+Load package missMethyl
+```{r}
+library(missMethyl)
+```
+```{r}
+enrichment_GO.tp3_heu_huu.sex.race.ct5 <- goregion(results.tp3_heu_huu.sex.race.ct5.ranges, all.cpg= rownames(betas.new.tp3_heu_huu), collection="GO", array.type = "EPIC")
+```
+
+```{r}
+enrichment_GO.tp3_heu_huu.sex.race.ct5 <- enrichment_GO.tp3_heu_huu.sex.race.ct5[order(enrichment_GO.tp3_heu_huu.sex.race.ct5$P.DE),] 
+
+topGSA(enrichment_GO.tp3_heu_huu.sex.race.ct5, number = 10)
+```
+
+Save file.
+```{r}
+write.csv(enrichment_GO.tp3_heu_huu.sex.race.ct5, file="C:\\Users\\jasmi\\Box\\RU MICS (Shared)\\Jasmine\\Aim 1\\GO_tp3_heu_huu-sex-race-ct5_rerun.csv")
+```
+
+
+
+
+
+
+
+
+
+
