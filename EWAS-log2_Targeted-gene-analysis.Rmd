@@ -161,8 +161,6 @@ datamanhattp3_hiv_heu.sex.race.ct5[order(P.value)][1:10]
 
 Volcano plot of resultstp3_hiv_heu using Bonferroni threshold. 
 
-2 sites met the Bonferroni threshold. 
-
 #Volcano Plot
 ```{r}
 with(datamanhattp3_hiv_heu.sex.race.ct5, plot(effect.size, -log10(P.value), pch=20, main=""))
@@ -339,8 +337,6 @@ datamanhattp3_hiv_huu.sex.race.ct5[order(P.value)][1:10]
 ```
 
 Volcano plot of resultstp3_hiv_huu using Bonferroni threshold. 
-
-2 sites met the Bonferroni threshold. 
 
 #Volcano Plot
 ```{r}
@@ -519,8 +515,6 @@ datamanhattp3_heu_huu.sex.race.ct5[order(P.value)][1:10]
 ```
 
 Volcano plot of resultstp3_heu_huu using Bonferroni threshold. 
-
-2 sites met the Bonferroni threshold. 
 
 #Volcano Plot
 ```{r}
@@ -884,8 +878,6 @@ datamanhattp12_hiv_huu.sex.race.ct3[order(P.value)][1:10]
 
 Volcano plot of resultstp12_hiv_huu using Bonferroni threshold. 
 
-2 sites met the Bonferroni threshold. 
-
 #Volcano Plot
 ```{r}
 with(datamanhattp12_hiv_huu.sex.race.ct3, plot(effect.size, -log10(P.value), pch=20, main=""))
@@ -1153,8 +1145,6 @@ toptp12_heu_huu.sex.race.ct3 <- left_join(Toptp12_heu_huu.sex.race.ct3, average,
 
 Target the EBF4 gene. Timepoint 3
 
-Note: if logFC > 0, means HIV < HEU.
-
 
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.EBF4 <- Toptp3_hiv_heu.sex.race.ct5[grepl("EBF4", Toptp3_hiv_heu.sex.race.ct5$UCSC_RefGene_Name),]
@@ -1187,7 +1177,6 @@ Toptp3_hiv_heu.sex.race.ct5.XDH <- Toptp3_hiv_heu.sex.race.ct5[grepl("XDH", Topt
 table(Toptp3_hiv_heu.sex.race.ct5.XDH[,14] < 0.05/(21))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.XDH.bonf <- Toptp3_hiv_heu.sex.race.ct5.XDH[which(Toptp3_hiv_heu.sex.race.ct5.XDH$P.value < 0.05/(21)),]
@@ -1214,7 +1203,6 @@ Toptp3_hiv_heu.sex.race.ct5.SPERT <- Toptp3_hiv_heu.sex.race.ct5[grepl("SPERT", 
 table(Toptp3_hiv_heu.sex.race.ct5.SPERT[,14] < 0.05/(17))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.SPERT.bonf <- Toptp3_hiv_heu.sex.race.ct5.SPERT[which(Toptp3_hiv_heu.sex.race.ct5.SPERT$P.value < 0.05/(17)),]
@@ -1238,7 +1226,6 @@ Toptp3_hiv_heu.sex.race.ct5.NLRC5 <- Toptp3_hiv_heu.sex.race.ct5[grepl("NLRC5", 
 table(Toptp3_hiv_heu.sex.race.ct5.NLRC5[,14] < 0.05/(62))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.NLRC5.bonf <- Toptp3_hiv_heu.sex.race.ct5.NLRC5[which(Toptp3_hiv_heu.sex.race.ct5.NLRC5$P.value < 0.05/(62)),]
@@ -1263,7 +1250,6 @@ Toptp3_hiv_heu.sex.race.ct5.FOXP1 <- Toptp3_hiv_heu.sex.race.ct5[grepl("FOXP1", 
 table(Toptp3_hiv_heu.sex.race.ct5.FOXP1[,14] < 0.05/(299))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.FOXP1.bonf <- Toptp3_hiv_heu.sex.race.ct5.FOXP1[which(Toptp3_hiv_heu.sex.race.ct5.FOXP1$P.value < 0.05/(299)),]
@@ -1289,7 +1275,7 @@ Toptp3_hiv_heu.sex.race.ct5.FNDC3B <- Toptp3_hiv_heu.sex.race.ct5[grepl("FNDC3B"
 table(Toptp3_hiv_heu.sex.race.ct5.FNDC3B[,14] < 0.05/(152))
 ```
 
-0 sites were found.
+
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.FNDC3B.bonf <- Toptp3_hiv_heu.sex.race.ct5.FNDC3B[which(Toptp3_hiv_heu.sex.race.ct5.FNDC3B$P.value < 0.05/(152)),]
 
@@ -1312,7 +1298,7 @@ Toptp3_hiv_heu.sex.race.ct5.RPS6KA2 <- Toptp3_hiv_heu.sex.race.ct5[grepl("RPS6KA
 table(Toptp3_hiv_heu.sex.race.ct5.RPS6KA2[,14] < 0.05/(362))
 ```
 
-0 sites were found.
+
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.RPS6KA2.bonf <- Toptp3_hiv_heu.sex.race.ct5.RPS6KA2[which(Toptp3_hiv_heu.sex.race.ct5.RPS6KA2$P.value < 0.05/(362)),]
 
@@ -1337,7 +1323,7 @@ Toptp3_hiv_heu.sex.race.ct5.DLL1 <- Toptp3_hiv_heu.sex.race.ct5[grepl("DLL1", To
 table(Toptp3_hiv_heu.sex.race.ct5.DLL1[,14] < 0.05/(38))
 ```
 
-0 site was found.
+
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.DLL1.bonf <- Toptp3_hiv_heu.sex.race.ct5.DLL1[which(Toptp3_hiv_heu.sex.race.ct5.DLL1$P.value < 0.05/(38)),]
 
@@ -1361,7 +1347,7 @@ Toptp3_hiv_heu.sex.race.ct5.HCG22 <- Toptp3_hiv_heu.sex.race.ct5[grepl("HCG22", 
 table(Toptp3_hiv_heu.sex.race.ct5.HCG22[,14] < 0.05/(30))
 ```
 
-0 sites were found.
+
 ```{r}
 Toptp3_hiv_heu.sex.race.ct5.HCG22.bonf <- Toptp3_hiv_heu.sex.race.ct5.HCG22[which(Toptp3_hiv_heu.sex.race.ct5.HCG22$P.value < 0.05/(30)),]
 
@@ -1381,8 +1367,6 @@ Target the EBF4 gene. Timepoint 3
 Toptp3_hiv_huu.sex.race.ct5.EBF4 <- Toptp3_hiv_huu.sex.race.ct5[grepl("EBF4", Toptp3_hiv_huu.sex.race.ct5$UCSC_RefGene_Name),]
 table(Toptp3_hiv_huu.sex.race.ct5.EBF4[,14] < 0.05/(56))
 ```
-
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.EBF4.bonf <- Toptp3_hiv_huu.sex.race.ct5.EBF4[which(Toptp3_hiv_huu.sex.race.ct5.EBF4$P.value < 0.05/(56)),]
@@ -1405,7 +1389,7 @@ Toptp3_hiv_huu.sex.race.ct5.XDH <- Toptp3_hiv_huu.sex.race.ct5[grepl("XDH", Topt
 table(Toptp3_hiv_huu.sex.race.ct5.XDH[,14] < 0.05/(21))
 ```
 
-0 sites were found.
+
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.XDH.bonf <- Toptp3_hiv_huu.sex.race.ct5.XDH[which(Toptp3_hiv_huu.sex.race.ct5.XDH$P.value < 0.05/(21)),]
 
@@ -1428,7 +1412,6 @@ Toptp3_hiv_huu.sex.race.ct5.SPERT <- Toptp3_hiv_huu.sex.race.ct5[grepl("SPERT", 
 table(Toptp3_hiv_huu.sex.race.ct5.SPERT[,14] < 0.05/(17))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.SPERT.bonf <- Toptp3_hiv_huu.sex.race.ct5.SPERT[which(Toptp3_hiv_huu.sex.race.ct5.SPERT$P.value < 0.05/(17)),]
@@ -1451,8 +1434,6 @@ Toptp3_hiv_huu.sex.race.ct5.NLRC5 <- Toptp3_hiv_huu.sex.race.ct5[grepl("NLRC5", 
 
 table(Toptp3_hiv_huu.sex.race.ct5.NLRC5[,14] < 0.05/(62))
 ```
-
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.NLRC5.bonf <- Toptp3_hiv_huu.sex.race.ct5.NLRC5[which(Toptp3_hiv_huu.sex.race.ct5.NLRC5$P.value < 0.05/(62)),]
@@ -1477,8 +1458,6 @@ Toptp3_hiv_huu.sex.race.ct5.FOXP1 <- Toptp3_hiv_huu.sex.race.ct5[grepl("FOXP1", 
 table(Toptp3_hiv_huu.sex.race.ct5.FOXP1[,14] < 0.05/(299))
 ```
 
-0 were found. 
-
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.FOXP1.bonf <- Toptp3_hiv_huu.sex.race.ct5.FOXP1[which(Toptp3_hiv_huu.sex.race.ct5.FOXP1$P.value < 0.05/(299)),]
 
@@ -1502,8 +1481,6 @@ Toptp3_hiv_huu.sex.race.ct5.FNDC3B <- Toptp3_hiv_huu.sex.race.ct5[grepl("FNDC3B"
 table(Toptp3_hiv_huu.sex.race.ct5.FNDC3B[,14] < 0.05/(152))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.FNDC3B.bonf <- Toptp3_hiv_huu.sex.race.ct5.FNDC3B[which(Toptp3_hiv_huu.sex.race.ct5.FNDC3B$P.value < 0.05/(152)),]
 
@@ -1525,8 +1502,6 @@ Toptp3_hiv_huu.sex.race.ct5.RPS6KA2 <- Toptp3_hiv_huu.sex.race.ct5[grepl("RPS6KA
 table(Toptp3_hiv_huu.sex.race.ct5.RPS6KA2[,14] < 0.05/(362))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.RPS6KA2.bonf <- Toptp3_hiv_huu.sex.race.ct5.RPS6KA2[which(Toptp3_hiv_huu.sex.race.ct5.RPS6KA2$P.value < 0.05/(362)),]
 
@@ -1547,7 +1522,6 @@ Toptp3_hiv_huu.sex.race.ct5.DLL1 <- Toptp3_hiv_huu.sex.race.ct5[grepl("DLL1", To
 
 table(Toptp3_hiv_huu.sex.race.ct5.DLL1[,14] < 0.05/(38))
 ```
- 0 sites were found.
 
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.DLL1.bonf <- Toptp3_hiv_huu.sex.race.ct5.DLL1[which(Toptp3_hiv_huu.sex.race.ct5.DLL1$P.value < 0.05/(38)),]
@@ -1570,7 +1544,6 @@ Toptp3_hiv_huu.sex.race.ct5.HCG22 <- Toptp3_hiv_huu.sex.race.ct5[grepl("HCG22", 
 table(Toptp3_hiv_huu.sex.race.ct5.HCG22[,14] < 0.05/(30))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_hiv_huu.sex.race.ct5.HCG22.bonf <- Toptp3_hiv_huu.sex.race.ct5.HCG22[which(Toptp3_hiv_huu.sex.race.ct5.HCG22$P.value < 0.05/(30)),]
@@ -1587,14 +1560,11 @@ ggplot(data = cpg_hist, aes(x = CPG.Labels , y = logFC)) +
 #EBF4 - Timepoint 3 - HEU vs. HUU
 Target the EBF4 gene. Timepoint 3
 
-Note: if logFC > 0, means heu < huu.
-
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.EBF4 <- Toptp3_heu_huu.sex.race.ct5[grepl("EBF4", Toptp3_heu_huu.sex.race.ct5$UCSC_RefGene_Name),]
 table(Toptp3_heu_huu.sex.race.ct5.EBF4[,14] < 0.05/(56))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.EBF4.bonf <- Toptp3_heu_huu.sex.race.ct5.EBF4[which(Toptp3_heu_huu.sex.race.ct5.EBF4$P.value < 0.05/(56)),]
@@ -1618,7 +1588,6 @@ Toptp3_heu_huu.sex.race.ct5.XDH <- Toptp3_heu_huu.sex.race.ct5[grepl("XDH", Topt
 table(Toptp3_heu_huu.sex.race.ct5.XDH[,14] < 0.05/(21))
 ```
 
-1 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.XDH.bonf <- Toptp3_heu_huu.sex.race.ct5.XDH[which(Toptp3_heu_huu.sex.race.ct5.XDH$P.value < 0.05/(21)),]
@@ -1658,7 +1627,6 @@ Toptp3_heu_huu.sex.race.ct5.SPERT <- Toptp3_heu_huu.sex.race.ct5[grepl("SPERT", 
 table(Toptp3_heu_huu.sex.race.ct5.SPERT[,14] < 0.05/(17))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.SPERT.bonf <- Toptp3_heu_huu.sex.race.ct5.SPERT[which(Toptp3_heu_huu.sex.race.ct5.SPERT$P.value < 0.05/(17)),]
@@ -1682,7 +1650,6 @@ Toptp3_heu_huu.sex.race.ct5.NLRC5 <- Toptp3_heu_huu.sex.race.ct5[grepl("NLRC5", 
 table(Toptp3_heu_huu.sex.race.ct5.NLRC5[,14] < 0.05/(62))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.NLRC5.bonf <- Toptp3_heu_huu.sex.race.ct5.NLRC5[which(Toptp3_heu_huu.sex.race.ct5.NLRC5$P.value < 0.05/(62)),]
@@ -1706,7 +1673,6 @@ Toptp3_heu_huu.sex.race.ct5.FOXP1 <- Toptp3_heu_huu.sex.race.ct5[grepl("FOXP1", 
 table(Toptp3_heu_huu.sex.race.ct5.FOXP1[,14] < 0.05/(299))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.FOXP1.bonf <- Toptp3_heu_huu.sex.race.ct5.FOXP1[which(Toptp3_heu_huu.sex.race.ct5.FOXP1$P.value < 0.05/(299)),]
@@ -1732,7 +1698,6 @@ Toptp3_heu_huu.sex.race.ct5.FNDC3B <- Toptp3_heu_huu.sex.race.ct5[grepl("FNDC3B"
 table(Toptp3_heu_huu.sex.race.ct5.FNDC3B[,14] < 0.05/(152))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.FNDC3B.bonf <- Toptp3_heu_huu.sex.race.ct5.FNDC3B[which(Toptp3_heu_huu.sex.race.ct5.FNDC3B$P.value < 0.05/(152)),]
@@ -1756,7 +1721,6 @@ Toptp3_heu_huu.sex.race.ct5.RPS6KA2 <- Toptp3_heu_huu.sex.race.ct5[grepl("RPS6KA
 table(Toptp3_heu_huu.sex.race.ct5.RPS6KA2[,14] < 0.05/(362))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.RPS6KA2.bonf <- Toptp3_heu_huu.sex.race.ct5.RPS6KA2[which(Toptp3_heu_huu.sex.race.ct5.RPS6KA2$P.value < 0.05/(362)),]
@@ -1780,7 +1744,6 @@ Toptp3_heu_huu.sex.race.ct5.DLL1 <- Toptp3_heu_huu.sex.race.ct5[grepl("DLL1", To
 table(Toptp3_heu_huu.sex.race.ct5.DLL1[,14] < 0.05/(38))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.DLL1.bonf <- Toptp3_heu_huu.sex.race.ct5.DLL1[which(Toptp3_heu_huu.sex.race.ct5.DLL1$P.value < 0.05/(38)),]
@@ -1804,7 +1767,6 @@ Toptp3_heu_huu.sex.race.ct5.HCG22 <- Toptp3_heu_huu.sex.race.ct5[grepl("HCG22", 
 table(Toptp3_heu_huu.sex.race.ct5.HCG22[,14] < 0.05/(30))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp3_heu_huu.sex.race.ct5.HCG22.bonf <- Toptp3_heu_huu.sex.race.ct5.HCG22[which(Toptp3_heu_huu.sex.race.ct5.HCG22$P.value < 0.05/(30)),]
@@ -1827,7 +1789,6 @@ Toptp12_hiv_heu.sex.race.ct3.EBF4 <- Toptp12_hiv_heu.sex.race.ct3[grepl("EBF4", 
 table(Toptp12_hiv_heu.sex.race.ct3.EBF4[,14] < 0.05/(56))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.EBF4.bonf <- Toptp12_hiv_heu.sex.race.ct3.EBF4[which(Toptp12_hiv_heu.sex.race.ct3.EBF4$P.value < 0.05/(56)),]
@@ -1849,7 +1810,6 @@ Toptp12_hiv_heu.sex.race.ct3.XDH <- Toptp12_hiv_heu.sex.race.ct3[grepl("XDH", To
 table(Toptp12_hiv_heu.sex.race.ct3.XDH[,14] < 0.05/(21))
 ```
 
-1 site was found.
 
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.XDH.bonf <- Toptp12_hiv_heu.sex.race.ct3.XDH[which(Toptp12_hiv_heu.sex.race.ct3.XDH$P.value < 0.05/(21)),]
@@ -1890,7 +1850,6 @@ Toptp12_hiv_heu.sex.race.ct3.SPERT <- Toptp12_hiv_heu.sex.race.ct3[grepl("SPERT"
 table(Toptp12_hiv_heu.sex.race.ct3.SPERT[,14] < 0.05/(17))
 ```
 
-2 sites were found.
 
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.SPERT.bonf <- Toptp12_hiv_heu.sex.race.ct3.SPERT[which(Toptp12_hiv_heu.sex.race.ct3.SPERT$P.value < 0.05/(17)),]
@@ -1929,7 +1888,6 @@ table(Toptp12_hiv_heu.sex.race.ct3.NLRC5[,14] < 0.05/(62))
 
 ```
 
-4 sites were found.
 
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.NLRC5.bonf <- Toptp12_hiv_heu.sex.race.ct3.NLRC5[which(Toptp12_hiv_heu.sex.race.ct3.NLRC5$P.value < 0.05/(62)),]
@@ -1972,7 +1930,6 @@ table(Toptp12_hiv_heu.sex.race.ct3.FOXP1[,14] < 0.05/(299))
 
 ```
 
-2 sites were found.
 
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.FOXP1.bonf <- Toptp12_hiv_heu.sex.race.ct3.FOXP1[which(Toptp12_hiv_heu.sex.race.ct3.FOXP1$P.value < 0.05/(299)),]
@@ -2014,7 +1971,6 @@ Toptp12_hiv_heu.sex.race.ct3.FNDC3B <- Toptp12_hiv_heu.sex.race.ct3[grepl("FNDC3
 table(Toptp12_hiv_heu.sex.race.ct3.FNDC3B[,14] < 0.05/(152))
 ```
 
-0 sites were found.
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.FNDC3B.bonf <- Toptp12_hiv_heu.sex.race.ct3.FNDC3B[which(Toptp12_hiv_heu.sex.race.ct3.FNDC3B$P.value < 0.05/(152)),]
 
@@ -2037,7 +1993,6 @@ Toptp12_hiv_heu.sex.race.ct3.RPS6KA2 <- Toptp12_hiv_heu.sex.race.ct3[grepl("RPS6
 table(Toptp12_hiv_heu.sex.race.ct3.RPS6KA2[,14] < 0.05/(362))
 ```
 
-2 sites were found.
 
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.RPS6KA2.bonf <- Toptp12_hiv_heu.sex.race.ct3.RPS6KA2[which(Toptp12_hiv_heu.sex.race.ct3.RPS6KA2$P.value < 0.05/(362)),]
@@ -2075,7 +2030,6 @@ Toptp12_hiv_heu.sex.race.ct3.DLL1 <- Toptp12_hiv_heu.sex.race.ct3[grepl("DLL1", 
 table(Toptp12_hiv_heu.sex.race.ct3.DLL1[,14] < 0.05/(38))
 ```
 
-0 sites were found.
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.DLL1.bonf <- Toptp12_hiv_heu.sex.race.ct3.DLL1[which(Toptp12_hiv_heu.sex.race.ct3.DLL1$P.value < 0.05/(38)),]
 
@@ -2096,7 +2050,6 @@ Toptp12_hiv_heu.sex.race.ct3.HCG22 <- Toptp12_hiv_heu.sex.race.ct3[grepl("HCG22"
 table(Toptp12_hiv_heu.sex.race.ct3.HCG22[,14] < 0.05/(30))
 ```
 
-1 site was found.
 
 ```{r}
 Toptp12_hiv_heu.sex.race.ct3.HCG22.bonf <- Toptp12_hiv_heu.sex.race.ct3.HCG22[which(Toptp12_hiv_heu.sex.race.ct3.HCG22$P.value < 0.05/(30)),]
@@ -2132,8 +2085,6 @@ table(Toptp12_hiv_huu.sex.race.ct3.EBF4[,14] < 0.05/(56))
 ```
 
 
-0 sites were found.
-
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.EBF4.bonf <- Toptp12_hiv_huu.sex.race.ct3.EBF4[which(Toptp12_hiv_huu.sex.race.ct3.EBF4$P.value < 0.05/(56)),]
 
@@ -2156,7 +2107,6 @@ Toptp12_hiv_huu.sex.race.ct3.XDH <- Toptp12_hiv_huu.sex.race.ct3[grepl("XDH", To
 table(Toptp12_hiv_huu.sex.race.ct3.XDH[,14] < 0.05/(21))
 ```
 
-1 site was found.
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.XDH.bonf <- Toptp12_hiv_huu.sex.race.ct3.XDH[which(Toptp12_hiv_huu.sex.race.ct3.XDH$P.value < 0.05/(21)),]
 
@@ -2194,7 +2144,6 @@ Toptp12_hiv_huu.sex.race.ct3.SPERT <- Toptp12_hiv_huu.sex.race.ct3[grepl("SPERT"
 table(Toptp12_hiv_huu.sex.race.ct3.SPERT[,14] < 0.05/(17))
 ```
 
-2 sites were found.
 
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.SPERT.bonf <- Toptp12_hiv_huu.sex.race.ct3.SPERT[which(Toptp12_hiv_huu.sex.race.ct3.SPERT$P.value < 0.05/(17)),]
@@ -2235,7 +2184,6 @@ Toptp12_hiv_huu.sex.race.ct3.NLRC5 <- Toptp12_hiv_huu.sex.race.ct3[grepl("NLRC5"
 table(Toptp12_hiv_huu.sex.race.ct3.NLRC5[,14] < 0.05/(62))
 ```
 
-2 sites were found. 
 
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.NLRC5.bonf <- Toptp12_hiv_huu.sex.race.ct3.NLRC5[which(Toptp12_hiv_huu.sex.race.ct3.NLRC5$P.value < 0.05/(62)),]
@@ -2277,7 +2225,6 @@ Toptp12_hiv_huu.sex.race.ct3.FOXP1 <- Toptp12_hiv_huu.sex.race.ct3[grepl("FOXP1"
 table(Toptp12_hiv_huu.sex.race.ct3.FOXP1[,14] < 0.05/(299))
 ```
 
-1 site was found.
 
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.FOXP1.bonf <- Toptp12_hiv_huu.sex.race.ct3.FOXP1[which(Toptp12_hiv_huu.sex.race.ct3.FOXP1$P.value < 0.05/(299)),]
@@ -2314,7 +2261,6 @@ Toptp12_hiv_huu.sex.race.ct3.FNDC3B <- Toptp12_hiv_huu.sex.race.ct3[grepl("FNDC3
 
 table(Toptp12_hiv_huu.sex.race.ct3.FNDC3B[,14] < 0.05/(152))
 ```
-0 sites were found.
 
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.FNDC3B.bonf <- Toptp12_hiv_huu.sex.race.ct3.FNDC3B[which(Toptp12_hiv_huu.sex.race.ct3.FNDC3B$P.value < 0.05/(152)),]
@@ -2336,8 +2282,6 @@ Toptp12_hiv_huu.sex.race.ct3.RPS6KA2 <- Toptp12_hiv_huu.sex.race.ct3[grepl("RPS6
 
 table(Toptp12_hiv_huu.sex.race.ct3.RPS6KA2[,14] < 0.05/(362))
 ```
-
-0 sites were found.
 
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.RPS6KA2.bonf <- Toptp12_hiv_huu.sex.race.ct3.RPS6KA2[which(Toptp12_hiv_huu.sex.race.ct3.RPS6KA2$P.value < 0.05/(362)),]
@@ -2361,8 +2305,6 @@ Toptp12_hiv_huu.sex.race.ct3.DLL1 <- Toptp12_hiv_huu.sex.race.ct3[grepl("DLL1", 
 table(Toptp12_hiv_huu.sex.race.ct3.DLL1[,14] < 0.05/(38))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.DLL1.bonf <- Toptp12_hiv_huu.sex.race.ct3.DLL1[which(Toptp12_hiv_huu.sex.race.ct3.DLL1$P.value < 0.05/(38)),]
 
@@ -2383,8 +2325,6 @@ Toptp12_hiv_huu.sex.race.ct3.HCG22 <- Toptp12_hiv_huu.sex.race.ct3[grepl("HCG22"
 
 table(Toptp12_hiv_huu.sex.race.ct3.HCG22[,14] < 0.05/(30))
 ```
-
-1 site was found.
 
 ```{r}
 Toptp12_hiv_huu.sex.race.ct3.HCG22.bonf <- Toptp12_hiv_huu.sex.race.ct3.HCG22[which(Toptp12_hiv_huu.sex.race.ct3.HCG22$P.value < 0.05/(30)),]
@@ -2424,8 +2364,6 @@ table(Toptp12_heu_huu.sex.race.ct3.EBF4[,14] < 0.05/(56))
 ```
 
 
-0 sites were found.
-
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.EBF4.bonf <- Toptp12_heu_huu.sex.race.ct3.EBF4[which(Toptp12_heu_huu.sex.race.ct3.EBF4$P.value < 0.05/(56)),]
 
@@ -2449,8 +2387,6 @@ Toptp12_heu_huu.sex.race.ct3.XDH <- Toptp12_heu_huu.sex.race.ct3[grepl("XDH", To
 table(Toptp12_heu_huu.sex.race.ct3.XDH[,14] < 0.05/(21))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.XDH.bonf <- Toptp12_heu_huu.sex.race.ct3.XDH[which(Toptp12_heu_huu.sex.race.ct3.XDH$P.value < 0.05/(21)),]
 
@@ -2473,7 +2409,6 @@ Toptp12_heu_huu.sex.race.ct3.SPERT <- Toptp12_heu_huu.sex.race.ct3[grepl("SPERT"
 table(Toptp12_heu_huu.sex.race.ct3.SPERT[,14] < 0.05/(17))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.SPERT.bonf <- Toptp12_heu_huu.sex.race.ct3.SPERT[which(Toptp12_heu_huu.sex.race.ct3.SPERT$P.value < 0.05/(17)),]
@@ -2498,8 +2433,6 @@ Toptp12_heu_huu.sex.race.ct3.NLRC5 <- Toptp12_heu_huu.sex.race.ct3[grepl("NLRC5"
 table(Toptp12_heu_huu.sex.race.ct3.NLRC5[,14] < 0.05/(62))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.NLRC5.bonf <- Toptp12_heu_huu.sex.race.ct3.NLRC5[which(Toptp12_heu_huu.sex.race.ct3.NLRC5$P.value < 0.05/(62)),]
 
@@ -2523,8 +2456,6 @@ Toptp12_heu_huu.sex.race.ct3.FOXP1 <- Toptp12_heu_huu.sex.race.ct3[grepl("FOXP1"
 table(Toptp12_heu_huu.sex.race.ct3.FOXP1[,14] < 0.05/(299))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.FOXP1.bonf <- Toptp12_heu_huu.sex.race.ct3.FOXP1[which(Toptp12_heu_huu.sex.race.ct3.FOXP1$P.value < 0.05/(299)),]
 
@@ -2546,8 +2477,6 @@ Toptp12_heu_huu.sex.race.ct3.FNDC3B <- Toptp12_heu_huu.sex.race.ct3[grepl("FNDC3
 table(Toptp12_heu_huu.sex.race.ct3.FNDC3B[,14] < 0.05/(152))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.FNDC3B.bonf <- Toptp12_heu_huu.sex.race.ct3.FNDC3B[which(Toptp12_heu_huu.sex.race.ct3.FNDC3B$P.value < 0.05/(152)),]
 
@@ -2568,8 +2497,6 @@ Toptp12_heu_huu.sex.race.ct3.RPS6KA2 <- Toptp12_heu_huu.sex.race.ct3[grepl("RPS6
 
 table(Toptp12_heu_huu.sex.race.ct3.RPS6KA2[,14] < 0.05/(362))
 ```
-
-0 sites were found.
 
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.RPS6KA2.bonf <- Toptp12_heu_huu.sex.race.ct3.RPS6KA2[which(Toptp12_heu_huu.sex.race.ct3.RPS6KA2$P.value < 0.05/(362)),]
@@ -2593,8 +2520,6 @@ Toptp12_heu_huu.sex.race.ct3.DLL1 <- Toptp12_heu_huu.sex.race.ct3[grepl("DLL1", 
 table(Toptp12_heu_huu.sex.race.ct3.DLL1[,14] < 0.05/(38))
 ```
 
-0 sites were found.
-
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.DLL1.bonf <- Toptp12_heu_huu.sex.race.ct3.DLL1[which(Toptp12_heu_huu.sex.race.ct3.DLL1$P.value < 0.05/(38)),]
 
@@ -2616,7 +2541,6 @@ Toptp12_heu_huu.sex.race.ct3.HCG22 <- Toptp12_heu_huu.sex.race.ct3[grepl("HCG22"
 table(Toptp12_heu_huu.sex.race.ct3.HCG22[,14] < 0.05/(30))
 ```
 
-0 sites were found.
 
 ```{r}
 Toptp12_heu_huu.sex.race.ct3.HCG22.bonf <- Toptp12_heu_huu.sex.race.ct3.HCG22[which(Toptp12_heu_huu.sex.race.ct3.HCG22$P.value < 0.05/(30)),]

@@ -271,7 +271,7 @@ ggplot(LC, aes(x=cell_type, y=proportion, fill=Group)) +
  
 ```
 
-Drop 2 excluded data
+Drop excluded data
 ```{r}
 keep = which(!pheno$exclude)
 ```

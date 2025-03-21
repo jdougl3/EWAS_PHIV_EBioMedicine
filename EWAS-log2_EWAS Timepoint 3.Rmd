@@ -69,7 +69,7 @@ class(pheno$predicted_sex)
 
 #Group - hiv vs. heu - Adjusted for race, sex, cell type 
 
-Subset Timepoint 3 and compare group hiv & heu for both pheno and betas.clean. 57 samples were extract5ed.
+Subset Timepoint 3 and compare group hiv & heu for both pheno and betas.clean. 57 samples were extracted.
 
 hiv & heu at Timepoint 3 = 24 vs. 33.
 
@@ -612,9 +612,9 @@ write.csv(enrichment_GO.tp3_hiv_huu.sex.race.ct5, file="C:\\Users\\jasmi\\Box\\R
 
 #Group - Heu vs. Huu - Adjusted for race, sex, cell type 
 
-Subset Timepoint 3 and compare group heu & huu for both pheno and betas.clean. 57 samples were extracted
+Subset Timepoint 3 and compare group heu & huu for both pheno and betas.clean. 66 samples were extracted
 
-heu & huu at Timepoint 3 = 24 vs. 33.
+heu & huu at Timepoint 3 = 33 vs. 33.
 
 ```{r}
 tp3_heu_huu <- which(pheno$Timepoints==3 & pheno$Group!="HIV+")
